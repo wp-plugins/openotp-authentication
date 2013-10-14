@@ -1,4 +1,4 @@
-=== RCDevs Two-Factor Authentication ===
+=== OpenOTP Two-Factor Authentication ===
 Contributors: RCDevs
 Tags: strong authentication, two-factor, authenticator, login, username, password, rcdevs, security
 Donate link: http://rcdevs.com/
