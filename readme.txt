@@ -11,6 +11,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 OpenOTP plugin Enable two-factor authentication for your admins and/or users
 
 == Description ==
+This Plugin enables strong two factor authentication for admins and users. It displays an overlay on Challenge-Response session, after fill in username and password. The plugin supports global, per role and per user settings configuration. The plugin will transparently handle any OpenOTP Login Mode including, LDAP only, OTP only and LDAP+OTP.
 
 It is versatile, device-independent and based on opened security standards. 
 OpenOTP provides fine-grained user identity and access management (IAM), one-time passwords authentication technologies (OTP) and extensive authentication policies for your AD / LDAP users. 
