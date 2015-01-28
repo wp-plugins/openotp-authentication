@@ -4,7 +4,7 @@
  * Plugin URI: http://www.rcdevs.com/downloads/index.php?id=eb1fe95690e94c38fb5356f83ad9aecc
  * Description: Add <a href="http://www.rcdevs.com/">OpenOTP</a> two-factor authentication to WordPress.
  * Author: RCDevs Inc
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author URI: https://www.rcdevs.com
  * License: GPL2+
  * Text Domain: openotp
@@ -44,6 +44,9 @@ class OpenOTP_auth {
     private $domain = null;
     private $username = null;
     private $password = null;
+    private $u2f = null;
+    private $u2fChallenge = null;
+    private $otpChallenge = null;
     private $rememberme = null;
 	private $show_openotp_challenge = false;
 	
@@ -108,7 +111,8 @@ class OpenOTP_auth {
         add_action( 'admin_menu', array( $this, 'action_admin_menu' ) );
 
         add_filter( 'plugin_action_links', array( $this, 'filter_plugin_action_links' ), 10, 2 );
-
+		
+		
         // Anything other than plugin configuration belongs in here.
         if ( $this->ready ) {
             // User settings
@@ -126,8 +130,10 @@ class OpenOTP_auth {
 
 			// add Login Form Overlay
 			add_action('login_enqueue_scripts', array( $this, 'openotp_AddJSToLogin' ));
+			
         }
     }
+
 
     /**
      * Add settings fields for main plugin page
@@ -595,9 +601,16 @@ class OpenOTP_auth {
 	<?php }
 
 	
-	
+	public function js_inside_body() {
+		$c =  "<script src=\"chrome-extension://pfboblefjcgdjicmnffhdgionmgcdmne/u2f-api.js\" type=\"text/javascript\"></script>";
+		echo $c;
+	}
+		
 	public function openotp_AddJSToLogin(){
 		if($this->show_openotp_challenge){
+			$this->js_inside_body();
+			//wp_enqueue_script( 'u2f_api', '//chrome-extension://pfboblefjcgdjicmnffhdgionmgcdmne/u2f-api.js', array(), '3', true);
+			
 			wp_enqueue_script( 'openotp_overlay', plugin_dir_url( __FILE__ ) . 'openotp.js',null,'',true);
 			wp_localize_script( 'openotp_overlay', 'otp_settings', array(
 				'openotp_message' => $this->message,
@@ -605,6 +618,8 @@ class OpenOTP_auth {
 				'openotp_session' => $this->state,
 				'openotp_timeout' => $this->timeout,
 				'openotp_ldappw' => $this->password,
+				'openotp_u2fChallenge' => $this->u2fChallenge,
+				'openotp_otpChallenge' => $this->otpChallenge,
 				'openotp_path' => plugin_dir_url( __FILE__ ),
 				'openotp_domain' => $this->domain,
 				'openotp_rememberme' => $this->rememberme			
@@ -618,12 +633,15 @@ class OpenOTP_auth {
 
     public function authenticate_user( $user = '', $username = '', $password = '' ) {
 		// Form not send
-        if( !isset( $_POST['wp-submit']) && !isset( $_POST['submit']) ) { 
+				
+       if( !isset( $_POST['wp-submit']) && !isset( $_POST['form_send']) ) { 
             return $user;
         }
 
 		$this->username = isset($_POST['openotp_username']) && $_POST['openotp_username'] != NULL ? $_POST['openotp_username'] : $username;
 		$this->password = isset($_POST['openotp_password']) && $_POST['openotp_password'] != NULL ? $_POST['openotp_password'] : $password;
+		$this->u2f = isset($_POST['openotp_u2f']) ? stripslashes($_POST['openotp_u2f']) : "";
+		
 		$state = isset($_POST['openotp_state']) ? $_POST['openotp_state'] : "";
 		$this->rememberme = isset($_POST['rememberme']) ? $_POST['rememberme'] : "";
 
@@ -665,7 +683,8 @@ class OpenOTP_auth {
 				
 		if ($state != NULL) {
 			// OpenOTP Challenge
-			$resp = $this->openotp_auth->openOTPChallenge($this->username, $this->domain, $state, $this->password);
+			//echo $this->u2f; die;
+			$resp = $this->openotp_auth->openOTPChallenge($this->username, $this->domain, $state, $this->password, $this->u2f);
 		} else {
 			// OpenOTP Login
 			$resp = $this->openotp_auth->openOTPSimpleLogin($this->username, $this->domain, utf8_encode($this->password));
@@ -694,6 +713,8 @@ class OpenOTP_auth {
 				$this->timeout = $resp['timeout'];
 
 				$resp['domain'] = $this->domain;
+				$this->u2fChallenge = $resp['u2fChallenge'];
+				$this->otpChallenge = $resp['otpChallenge'];
 				$this->show_openotp_challenge = true;
 				break;
 			 default:

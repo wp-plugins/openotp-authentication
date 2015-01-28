@@ -211,9 +211,9 @@ EOT;
 		return $resp;
 	}
 	
-	public function openOTPChallenge($username, $domain, $state, $password){
+	public function openOTPChallenge($username, $domain, $state, $password, $u2f){
 		if (!$this->soapRequest()) return false;
-		$resp = $this->soap_client->openotpChallenge($username, $domain, $state, $password);
+		$resp = $this->soap_client->openotpChallenge($username, $domain, $state, $password, $u2f);
 		
 		return $resp;
 	}
